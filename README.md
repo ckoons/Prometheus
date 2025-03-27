@@ -1,5 +1,7 @@
 # Prometheus
 
+<img src="images/icon.jpg" alt="Prometheus Nebula Icon" width="200"/>
+
 Forethought planning system for the Tekton project ecosystem.
 
 ## Overview
