@@ -1,36 +1,35 @@
 # Prometheus
 
-<img src="images/icon.jpg" alt="Prometheus Nebula Icon" width="800"/>
-
-Forethought planning system for the Tekton project ecosystem.
-
 ## Overview
 
 Prometheus is the planning and preparation component of the Tekton ecosystem. It analyzes requirements, designs execution plans, and coordinates with other components to ensure successful outcomes.
 
-## Components
+## Key Features
 
-### Prometheus (Forethought)
-
-The primary planning system that:
 - Analyzes requirements and constraints
 - Designs multi-phase execution plans
 - Coordinates with other Tekton components
 - Prepares resources and dependencies
 - Monitors execution progress
 
-### Epimetheus (Afterthought)
+## Quick Start
 
-The retrospective analysis system that:
-- Evaluates completed operations
-- Consults with Sophia, Metis, and Noesis on improvements
-- Creates postmortem reports for developers
-- Identifies patterns for optimization
-- Recommends system-wide improvements
+```bash
+# Register with Hermes
+python -m Prometheus/register_with_hermes.py
 
-## Integration
+# Start with Tekton
+./scripts/tekton_launch --components prometheus
 
-Prometheus works closely with:
-- **Telos**: To understand user requirements
-- **Synthesis**: To execute the prepared plans
-- **Sophia/Metis/Noesis**: To incorporate learning and optimization
+# Use client
+python -m Prometheus/examples/client_usage.py
+```
+
+## Documentation
+
+For detailed documentation, see the following resources in the MetaData directory:
+
+- [Component Summaries](../MetaData/ComponentSummaries.md) - Overview of all Tekton components
+- [Tekton Architecture](../MetaData/TektonArchitecture.md) - Overall system architecture
+- [Component Integration](../MetaData/ComponentIntegration.md) - How components interact
+- [CLI Operations](../MetaData/CLI_Operations.md) - Command-line operations
