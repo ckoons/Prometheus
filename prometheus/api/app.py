@@ -56,8 +56,9 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI application
     """
-    # Get the port from environment variables or use default
-    port = int(os.environ.get("PROMETHEUS_PORT", "8006"))
+    # Use standardized port configuration
+    from ..utils.port_config import get_prometheus_port
+    port = get_prometheus_port()
     
     # Create the FastAPI application
     app = FastAPI(
@@ -164,7 +165,8 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     
-    port = int(os.environ.get("PROMETHEUS_PORT", "8006"))
+    from ..utils.port_config import get_prometheus_port
+    port = get_prometheus_port()
     uvicorn.run(
         "prometheus.api.app:app",
         host="0.0.0.0",

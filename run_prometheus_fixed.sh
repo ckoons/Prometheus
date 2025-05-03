@@ -1,19 +1,19 @@
 #!/bin/bash
-#
-# Run script for Prometheus component in Tekton
-#
+# Fixed run script for Prometheus component in Tekton
 
-# Determine the Tekton root directory (parent of this component)
+# Determine the script directory and Tekton root directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEKTON_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# Set environment variables
+# Set up port environment variable
 PROMETHEUS_PORT=8006
 export PROMETHEUS_PORT
+
+# Make sure Python can find our modules
 export PYTHONPATH="${SCRIPT_DIR}:${TEKTON_ROOT}:${PYTHONPATH}"
 
-# Create logs directory
-mkdir -p "$HOME/.tekton/logs"
+# Create log directory
+mkdir -p "${HOME}/.tekton/logs"
 
 # Check if Prometheus is already running
 if nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then
@@ -23,15 +23,15 @@ fi
 
 echo "Starting Prometheus on port $PROMETHEUS_PORT..."
 
-# Change to the component directory
+# Run the Prometheus API server
 cd "${SCRIPT_DIR}" || { echo "Failed to change to Prometheus directory"; exit 1; }
 
-# Run the server
-python -m prometheus.api.app > "$HOME/.tekton/logs/prometheus.log" 2>&1 &
+# Run the fixed app
+python -m prometheus.api.fixed_app &
 PROMETHEUS_PID=$!
 echo "Prometheus server started with PID: $PROMETHEUS_PID"
 
-# Wait for the server to start (up to 10 seconds)
+# Wait for the server to start
 for i in {1..10}; do
     if nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then
         echo "Prometheus is running at http://localhost:$PROMETHEUS_PORT"
@@ -41,22 +41,11 @@ for i in {1..10}; do
     sleep 1
 done
 
-# Check if server started successfully
 if ! nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then
     echo "Prometheus failed to start on port $PROMETHEUS_PORT"
-    echo "Check logs at $HOME/.tekton/logs/prometheus.log for details"
+    kill $PROMETHEUS_PID 2>/dev/null
     exit 1
 fi
 
-# Register with Hermes if available
-if [[ -f "${TEKTON_ROOT}/scripts/tekton-register" ]]; then
-    echo "Registering Prometheus with Hermes..."
-    ${TEKTON_ROOT}/scripts/tekton-register register --component prometheus --config "${TEKTON_ROOT}/config/components/prometheus.yaml" &
-    REGISTER_PID=$!
-fi
-
-# Set up trap for clean shutdown
-trap "kill $PROMETHEUS_PID 2>/dev/null; exit" EXIT SIGINT SIGTERM
-
-# Keep the script running
+# Wait for process to finish
 wait $PROMETHEUS_PID

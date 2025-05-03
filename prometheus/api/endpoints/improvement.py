@@ -443,8 +443,7 @@ async def create_improvement_pattern(pattern: ImprovementPatternCreate):
 async def get_improvement_suggestions(
     source_type: str = Query(..., description="Type of source for suggestions"),
     source_id: Optional[str] = Query(None, description="ID of the source"),
-    limit: int = Query(5, ge=1, description="Maximum number of suggestions"),
-    context: Optional[Dict[str, Any]] = Query(None, description="Additional context")
+    limit: int = Query(5, ge=1, description="Maximum number of suggestions")
 ):
     """
     Get improvement suggestions.
@@ -453,7 +452,6 @@ async def get_improvement_suggestions(
         source_type: Type of source for suggestions
         source_id: Optional ID of the source
         limit: Maximum number of suggestions
-        context: Optional additional context
         
     Returns:
         List of improvement suggestions
@@ -559,7 +557,8 @@ async def get_improvement_progress(
     source_type: Optional[str] = Query(None, description="Type of source for improvements"),
     source_id: Optional[str] = Query(None, description="ID of the source"),
     status: Optional[List[str]] = Query(None, description="Statuses to include"),
-    time_range: Optional[Dict[str, Any]] = Query(None, description="Time range for the progress"),
+    start_date: Optional[str] = Query(None, description="Start date for the progress (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date for the progress (ISO format)"),
     group_by: Optional[str] = Query(None, description="Group by dimension")
 ):
     """
@@ -569,7 +568,8 @@ async def get_improvement_progress(
         source_type: Optional type of source for improvements
         source_id: Optional ID of the source
         status: Optional list of statuses to include
-        time_range: Optional time range for the progress
+        start_date: Optional start date for the progress (ISO format)
+        end_date: Optional end date for the progress (ISO format)
         group_by: Optional dimension to group by
         
     Returns:
@@ -585,9 +585,40 @@ async def get_improvement_progress(
         all_improvements = [i for i in all_improvements if i.get("source_id") == source_id]
     if status:
         all_improvements = [i for i in all_improvements if i.get("status") in status]
-    if time_range:
-        # Apply time filter (placeholder implementation)
-        pass
+    # Apply time range filter if provided
+    if start_date or end_date:
+        from datetime import datetime
+        
+        # Convert dates from ISO format
+        start_timestamp = None
+        end_timestamp = None
+        
+        if start_date:
+            try:
+                start_timestamp = datetime.fromisoformat(start_date).timestamp()
+            except ValueError:
+                # Handle invalid date format
+                pass
+                
+        if end_date:
+            try:
+                end_timestamp = datetime.fromisoformat(end_date).timestamp()
+            except ValueError:
+                # Handle invalid date format
+                pass
+        
+        # Filter by date range
+        if start_timestamp:
+            all_improvements = [
+                i for i in all_improvements 
+                if i.get("created_at", 0) >= start_timestamp
+            ]
+            
+        if end_timestamp:
+            all_improvements = [
+                i for i in all_improvements 
+                if i.get("created_at", 0) <= end_timestamp
+            ]
     
     # Calculate progress metrics
     total_count = len(all_improvements)

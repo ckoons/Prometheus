@@ -598,7 +598,8 @@ async def get_burndown_chart(
 async def get_tracking_metrics(
     plan_id: str = Path(..., description="ID of the plan"),
     metrics: List[str] = Query(..., description="Metrics to include"),
-    time_range: Optional[Dict[str, Any]] = Query(None, description="Time range for the metrics"),
+    start_date: Optional[str] = Query(None, description="Start date for metrics (ISO format)"),
+    end_date: Optional[str] = Query(None, description="End date for metrics (ISO format)"),
     group_by: Optional[str] = Query(None, description="Group by dimension")
 ):
     """
@@ -607,7 +608,8 @@ async def get_tracking_metrics(
     Args:
         plan_id: ID of the plan
         metrics: List of metrics to include
-        time_range: Optional time range for the metrics
+        start_date: Optional start date for metrics (ISO format)
+        end_date: Optional end date for metrics (ISO format)
         group_by: Optional dimension to group by
         
     Returns:
@@ -626,9 +628,28 @@ async def get_tracking_metrics(
     plan_records = [r for r in execution_records_db.values() if r["plan_id"] == plan_id]
     
     # Apply time range filter if specified
-    if time_range:
-        # Placeholder implementation
-        pass
+    if start_date or end_date:
+        from datetime import datetime
+        
+        # Convert dates from ISO format
+        start_timestamp = None
+        end_timestamp = None
+        
+        if start_date:
+            try:
+                start_timestamp = datetime.fromisoformat(start_date).timestamp()
+            except ValueError:
+                # Handle invalid date format
+                pass
+                
+        if end_date:
+            try:
+                end_timestamp = datetime.fromisoformat(end_date).timestamp()
+            except ValueError:
+                # Handle invalid date format
+                pass
+        
+        # Time range filtering will be implemented in future PRs
     
     # Calculate metrics
     metrics_data = {}
