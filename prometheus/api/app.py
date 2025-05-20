@@ -24,6 +24,7 @@ logger = logging.getLogger("prometheus.api")
 from .endpoints import planning, tasks, timelines, resources
 from .endpoints import retrospective, history, improvement
 from .endpoints import tracking, llm_integration
+from .fastmcp_endpoints import mcp_router, fastmcp_server
 
 
 @asynccontextmanager
@@ -38,12 +39,26 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Prometheus/Epimethius API...")
     
     try:
+        # Initialize FastMCP server
+        try:
+            await fastmcp_server.startup()
+            logger.info("FastMCP server initialized successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server initialization failed: {e}")
+        
         # Initialize engines (will be implemented in future PRs)
         logger.info("Initialization complete")
         yield
     finally:
         # Cleanup: Shutdown components
         logger.info("Shutting down Prometheus/Epimethius API...")
+        
+        # Shutdown FastMCP server
+        try:
+            await fastmcp_server.shutdown()
+            logger.info("FastMCP server shut down successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server shutdown failed: {e}")
         
         # Cleanup resources (will be implemented in future PRs)
         logger.info("Cleanup complete")
@@ -153,6 +168,9 @@ def create_app() -> FastAPI:
     shared_router.include_router(tracking.router)
     shared_router.include_router(llm_integration.router)
     app.include_router(shared_router)
+    
+    # Mount MCP API routes
+    app.include_router(mcp_router)
     
     return app
 

@@ -20,6 +20,7 @@ setup(
         "pandas>=1.3.3",    # For data analysis
         "matplotlib>=3.4.3", # For visualizations
         "python-dateutil>=2.8.2",
+        "tekton-core>=0.1.0",  # For MCP support
     ],
     extras_require={
         "dev": [
