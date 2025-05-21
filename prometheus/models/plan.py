@@ -9,6 +9,68 @@ from typing import Dict, List, Any, Optional, Set
 import uuid
 
 
+class ResourceRequirement:
+    """Resource requirement model for planning system."""
+    
+    def __init__(
+        self,
+        requirement_id: str,
+        name: str,
+        description: str,
+        resource_type: str,  # "human", "compute", "storage", etc.
+        quantity: float,
+        unit: str,  # "hours", "GB", "cores", etc.
+        priority: str = "medium",  # "low", "medium", "high", "critical"
+        metadata: Dict[str, Any] = None
+    ):
+        self.requirement_id = requirement_id
+        self.name = name
+        self.description = description
+        self.resource_type = resource_type
+        self.quantity = quantity
+        self.unit = unit
+        self.priority = priority
+        self.metadata = metadata or {}
+        self.created_at = datetime.now().timestamp()
+        self.updated_at = self.created_at
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the resource requirement to a dictionary."""
+        return {
+            "requirement_id": self.requirement_id,
+            "name": self.name,
+            "description": self.description,
+            "resource_type": self.resource_type,
+            "quantity": self.quantity,
+            "unit": self.unit,
+            "priority": self.priority,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ResourceRequirement':
+        """Create a resource requirement from a dictionary."""
+        requirement = cls(
+            requirement_id=data["requirement_id"],
+            name=data["name"],
+            description=data["description"],
+            resource_type=data["resource_type"],
+            quantity=data["quantity"],
+            unit=data["unit"],
+            priority=data.get("priority", "medium"),
+            metadata=data.get("metadata", {})
+        )
+        
+        if "created_at" in data:
+            requirement.created_at = data["created_at"]
+        if "updated_at" in data:
+            requirement.updated_at = data["updated_at"]
+            
+        return requirement
+
+
 class Milestone:
     """Milestone model representing a significant point in a plan."""
 
