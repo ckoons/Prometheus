@@ -48,15 +48,12 @@ fastmcp_server = FastMCPServer(
     description="Prometheus Planning and Analysis MCP Server"
 )
 
-# Register capabilities and tools
-fastmcp_server.register_capability(PlanningCapability)
-fastmcp_server.register_capability(RetrospectiveAnalysisCapability)
-fastmcp_server.register_capability(ResourceManagementCapability)
-fastmcp_server.register_capability(ImprovementRecommendationsCapability)
+# Capabilities are already registered by the @mcp_capability decorator
+# No need to register them again
 
-# Register all tools
-for tool in planning_tools + retrospective_tools + resource_management_tools + improvement_tools:
-    fastmcp_server.register_tool(tool)
+# Tools are already registered by the @mcp_tool decorator
+# When using FastMCP decorators, tools are automatically registered
+# No need to manually register them
 
 
 # Create router for MCP endpoints

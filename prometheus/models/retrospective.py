@@ -8,6 +8,8 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Set
 import uuid
 
+from shared.debug.debug_utils import debug_log, log_function
+
 
 class RetroItem:
     """Model for an item in a retrospective."""
@@ -488,4 +490,332 @@ class Retrospective:
             facilitator=facilitator,
             participants=participants,
             metadata=metadata
+        )
+
+
+class RetrospectiveAnalysis:
+    """Model for analyzing retrospective data and generating insights."""
+
+    @log_function()
+    def __init__(
+        self,
+        analysis_id: str,
+        retro_id: str,
+        created_at: Optional[float] = None,
+        updated_at: Optional[float] = None,
+        insights: List[Dict[str, Any]] = None,
+        metrics: Dict[str, Any] = None,
+        recommendations: List[str] = None,
+        comparison_data: Dict[str, Any] = None,
+        metadata: Dict[str, Any] = None
+    ):
+        self.analysis_id = analysis_id
+        self.retro_id = retro_id
+        self.created_at = created_at or datetime.now().timestamp()
+        self.updated_at = updated_at or self.created_at
+        self.insights = insights or []
+        self.metrics = metrics or {}
+        self.recommendations = recommendations or []
+        self.comparison_data = comparison_data or {}
+        self.metadata = metadata or {}
+        debug_log.debug("prometheus", f"RetrospectiveAnalysis initialized for retro_id: {retro_id}")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the retrospective analysis to a dictionary."""
+        return {
+            "analysis_id": self.analysis_id,
+            "retro_id": self.retro_id,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "insights": self.insights,
+            "metrics": self.metrics,
+            "recommendations": self.recommendations,
+            "comparison_data": self.comparison_data,
+            "metadata": self.metadata
+        }
+
+    @classmethod
+    @log_function()
+    def from_dict(cls, data: Dict[str, Any]) -> 'RetrospectiveAnalysis':
+        """Create a retrospective analysis from a dictionary."""
+        analysis = cls(
+            analysis_id=data["analysis_id"],
+            retro_id=data["retro_id"],
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
+            insights=data.get("insights", []),
+            metrics=data.get("metrics", {}),
+            recommendations=data.get("recommendations", []),
+            comparison_data=data.get("comparison_data", {}),
+            metadata=data.get("metadata", {})
+        )
+        debug_log.debug("prometheus", f"RetrospectiveAnalysis created from dict for retro_id: {data['retro_id']}")
+        return analysis
+
+    @log_function()
+    def add_insight(self, category: str, description: str, severity: str = "medium", related_items: List[str] = None) -> None:
+        """Add an insight to the analysis."""
+        insight = {
+            "id": f"insight-{uuid.uuid4()}",
+            "category": category,
+            "description": description,
+            "severity": severity,
+            "related_items": related_items or [],
+            "created_at": datetime.now().timestamp()
+        }
+        self.insights.append(insight)
+        self.updated_at = datetime.now().timestamp()
+        debug_log.debug("prometheus", f"Added insight to analysis {self.analysis_id}: {category}")
+
+    @log_function()
+    def add_recommendation(self, recommendation: str) -> None:
+        """Add a recommendation to the analysis."""
+        if recommendation not in self.recommendations:
+            self.recommendations.append(recommendation)
+            self.updated_at = datetime.now().timestamp()
+            debug_log.debug("prometheus", f"Added recommendation to analysis {self.analysis_id}")
+
+    @log_function()
+    def update_metrics(self, new_metrics: Dict[str, Any]) -> None:
+        """Update the metrics with new data."""
+        self.metrics.update(new_metrics)
+        self.updated_at = datetime.now().timestamp()
+        debug_log.debug("prometheus", f"Updated metrics for analysis {self.analysis_id}")
+
+    @log_function()
+    def compare_with_previous(self, previous_retro_data: Dict[str, Any]) -> None:
+        """Compare with a previous retrospective and update comparison data."""
+        # Simplified comparison logic - in a real implementation, 
+        # this would contain more sophisticated analysis
+        if not previous_retro_data:
+            debug_log.debug("prometheus", "No previous retro data provided for comparison")
+            return
+            
+        # Example comparison calculations
+        self.comparison_data["previous_retro_id"] = previous_retro_data.get("retro_id")
+        
+        # Compare action item completion rates
+        prev_action_items = previous_retro_data.get("action_items", [])
+        prev_completed = sum(1 for item in prev_action_items if item.get("status") == "completed")
+        prev_total = len(prev_action_items)
+        prev_completion_rate = prev_completed / prev_total if prev_total > 0 else 0
+        
+        curr_action_items = self.metrics.get("action_items", {})
+        curr_completed = curr_action_items.get("completed", 0)
+        curr_total = curr_action_items.get("total", 0)
+        curr_completion_rate = curr_completed / curr_total if curr_total > 0 else 0
+        
+        self.comparison_data["action_completion_rate_change"] = curr_completion_rate - prev_completion_rate
+        self.updated_at = datetime.now().timestamp()
+        debug_log.debug("prometheus", f"Completed comparison with previous retro {previous_retro_data.get('retro_id')}")
+
+    @staticmethod
+    @log_function()
+    def create_new(retro_id: str, metrics: Dict[str, Any] = None) -> 'RetrospectiveAnalysis':
+        """
+        Create a new retrospective analysis with a generated ID.
+        
+        Args:
+            retro_id: ID of the retrospective being analyzed
+            metrics: Optional initial metrics
+            
+        Returns:
+            A new RetrospectiveAnalysis instance
+        """
+        analysis_id = f"retro-analysis-{uuid.uuid4()}"
+        debug_log.info("prometheus", f"Creating new RetrospectiveAnalysis with ID: {analysis_id}")
+        return RetrospectiveAnalysis(
+            analysis_id=analysis_id,
+            retro_id=retro_id,
+            metrics=metrics
+        )
+
+
+class PerformanceMetrics:
+    """Model for tracking and analyzing performance metrics from retrospectives."""
+
+    @log_function()
+    def __init__(
+        self,
+        metrics_id: str,
+        retro_id: str,
+        created_at: Optional[float] = None,
+        updated_at: Optional[float] = None,
+        velocity: Optional[float] = None,
+        completion_rate: Optional[float] = None,
+        average_task_duration: Optional[float] = None,
+        story_points_completed: Optional[int] = None,
+        tasks_completed: Optional[int] = None,
+        blockers_count: Optional[int] = None,
+        lead_time: Optional[float] = None,
+        cycle_time: Optional[float] = None,
+        team_satisfaction: Optional[float] = None,
+        custom_metrics: Dict[str, Any] = None,
+        historical_data: List[Dict[str, Any]] = None,
+        metadata: Dict[str, Any] = None
+    ):
+        """
+        Initialize performance metrics.
+        
+        Args:
+            metrics_id: Unique identifier for the metrics
+            retro_id: ID of the related retrospective
+            created_at: Creation timestamp
+            updated_at: Last update timestamp
+            velocity: Team velocity (story points per time period)
+            completion_rate: Task completion rate (0.0-1.0)
+            average_task_duration: Average time to complete tasks
+            story_points_completed: Total story points completed
+            tasks_completed: Number of tasks completed
+            blockers_count: Number of blockers encountered
+            lead_time: Average lead time (concept to delivery)
+            cycle_time: Average cycle time (work start to completion)
+            team_satisfaction: Team satisfaction score (0.0-10.0)
+            custom_metrics: Any additional custom metrics
+            historical_data: Historical performance data for trend analysis
+            metadata: Additional metadata
+        """
+        self.metrics_id = metrics_id
+        self.retro_id = retro_id
+        self.created_at = created_at or datetime.now().timestamp()
+        self.updated_at = updated_at or self.created_at
+        self.velocity = velocity
+        self.completion_rate = completion_rate
+        self.average_task_duration = average_task_duration
+        self.story_points_completed = story_points_completed
+        self.tasks_completed = tasks_completed
+        self.blockers_count = blockers_count
+        self.lead_time = lead_time
+        self.cycle_time = cycle_time
+        self.team_satisfaction = team_satisfaction
+        self.custom_metrics = custom_metrics or {}
+        self.historical_data = historical_data or []
+        self.metadata = metadata or {}
+        debug_log.debug("prometheus", f"PerformanceMetrics initialized for retro_id: {retro_id}")
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the performance metrics to a dictionary."""
+        return {
+            "metrics_id": self.metrics_id,
+            "retro_id": self.retro_id,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "velocity": self.velocity,
+            "completion_rate": self.completion_rate,
+            "average_task_duration": self.average_task_duration,
+            "story_points_completed": self.story_points_completed,
+            "tasks_completed": self.tasks_completed,
+            "blockers_count": self.blockers_count,
+            "lead_time": self.lead_time,
+            "cycle_time": self.cycle_time,
+            "team_satisfaction": self.team_satisfaction,
+            "custom_metrics": self.custom_metrics,
+            "historical_data": self.historical_data,
+            "metadata": self.metadata
+        }
+
+    @classmethod
+    @log_function()
+    def from_dict(cls, data: Dict[str, Any]) -> 'PerformanceMetrics':
+        """Create performance metrics from a dictionary."""
+        metrics = cls(
+            metrics_id=data["metrics_id"],
+            retro_id=data["retro_id"],
+            created_at=data.get("created_at"),
+            updated_at=data.get("updated_at"),
+            velocity=data.get("velocity"),
+            completion_rate=data.get("completion_rate"),
+            average_task_duration=data.get("average_task_duration"),
+            story_points_completed=data.get("story_points_completed"),
+            tasks_completed=data.get("tasks_completed"),
+            blockers_count=data.get("blockers_count"),
+            lead_time=data.get("lead_time"),
+            cycle_time=data.get("cycle_time"),
+            team_satisfaction=data.get("team_satisfaction"),
+            custom_metrics=data.get("custom_metrics", {}),
+            historical_data=data.get("historical_data", []),
+            metadata=data.get("metadata", {})
+        )
+        debug_log.debug("prometheus", f"PerformanceMetrics created from dict for retro_id: {data['retro_id']}")
+        return metrics
+
+    @log_function()
+    def add_historical_data_point(self, data_point: Dict[str, Any]) -> None:
+        """Add a historical data point for trend analysis."""
+        if not data_point.get("timestamp"):
+            data_point["timestamp"] = datetime.now().timestamp()
+        self.historical_data.append(data_point)
+        self.updated_at = datetime.now().timestamp()
+        debug_log.debug("prometheus", f"Added historical data point to metrics {self.metrics_id}")
+
+    @log_function()
+    def add_custom_metric(self, name: str, value: Any) -> None:
+        """Add or update a custom metric."""
+        self.custom_metrics[name] = value
+        self.updated_at = datetime.now().timestamp()
+        debug_log.debug("prometheus", f"Added custom metric '{name}' to metrics {self.metrics_id}")
+
+    @log_function()
+    def calculate_trend(self, metric_name: str) -> Dict[str, Any]:
+        """
+        Calculate trend data for a specific metric.
+        
+        Args:
+            metric_name: Name of the metric to analyze
+            
+        Returns:
+            Trend analysis data
+        """
+        if not self.historical_data:
+            return {"trend": "no_data", "change": 0, "data_points": 0}
+            
+        data_points = [point.get(metric_name) for point in sorted(
+            self.historical_data, 
+            key=lambda x: x.get("timestamp", 0)
+        ) if point.get(metric_name) is not None]
+        
+        if not data_points or len(data_points) < 2:
+            return {"trend": "insufficient_data", "change": 0, "data_points": len(data_points)}
+            
+        first_value = data_points[0]
+        last_value = data_points[-1]
+        
+        if isinstance(first_value, (int, float)) and isinstance(last_value, (int, float)):
+            change = last_value - first_value
+            percent_change = (change / abs(first_value)) * 100 if first_value != 0 else 0
+            
+            trend = "stable"
+            if percent_change > 5:
+                trend = "improving"
+            elif percent_change < -5:
+                trend = "declining"
+                
+            return {
+                "trend": trend,
+                "change": change,
+                "percent_change": percent_change,
+                "first_value": first_value,
+                "last_value": last_value,
+                "data_points": len(data_points)
+            }
+        
+        return {"trend": "non_numeric", "change": 0, "data_points": len(data_points)}
+
+    @staticmethod
+    @log_function()
+    def create_new(retro_id: str) -> 'PerformanceMetrics':
+        """
+        Create new performance metrics with a generated ID.
+        
+        Args:
+            retro_id: ID of the retrospective
+            
+        Returns:
+            A new PerformanceMetrics instance
+        """
+        metrics_id = f"metrics-{uuid.uuid4()}"
+        debug_log.info("prometheus", f"Creating new PerformanceMetrics with ID: {metrics_id}")
+        return PerformanceMetrics(
+            metrics_id=metrics_id,
+            retro_id=retro_id
         )

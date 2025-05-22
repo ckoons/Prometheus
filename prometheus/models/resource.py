@@ -154,3 +154,138 @@ class Resource:
             cost_rate=cost_rate,
             metadata=metadata
         )
+
+
+class ResourceAllocation:
+    """Resource allocation model representing the assignment of a resource to a task."""
+
+    def __init__(
+        self,
+        allocation_id: str,
+        resource_id: str,
+        task_id: str,
+        start_date: datetime,
+        end_date: datetime,
+        allocated_hours: float,
+        allocation_type: str = "full",  # "full", "partial", "overtime"
+        status: str = "planned",  # "planned", "active", "completed", "cancelled"
+        metadata: Dict[str, Any] = None
+    ):
+        self.allocation_id = allocation_id
+        self.resource_id = resource_id
+        self.task_id = task_id
+        self.start_date = start_date
+        self.end_date = end_date
+        self.allocated_hours = allocated_hours
+        self.allocation_type = allocation_type
+        self.status = status
+        self.metadata = metadata or {}
+        self.created_at = datetime.now().timestamp()
+        self.updated_at = self.created_at
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the allocation to a dictionary."""
+        return {
+            "allocation_id": self.allocation_id,
+            "resource_id": self.resource_id,
+            "task_id": self.task_id,
+            "start_date": self.start_date.isoformat() if self.start_date else None,
+            "end_date": self.end_date.isoformat() if self.end_date else None,
+            "allocated_hours": self.allocated_hours,
+            "allocation_type": self.allocation_type,
+            "status": self.status,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ResourceAllocation':
+        """Create an allocation from a dictionary."""
+        # Convert date strings to datetime objects
+        start_date = datetime.fromisoformat(data["start_date"]) if data.get("start_date") else None
+        end_date = datetime.fromisoformat(data["end_date"]) if data.get("end_date") else None
+        
+        allocation = cls(
+            allocation_id=data["allocation_id"],
+            resource_id=data["resource_id"],
+            task_id=data["task_id"],
+            start_date=start_date,
+            end_date=end_date,
+            allocated_hours=data["allocated_hours"],
+            allocation_type=data.get("allocation_type", "full"),
+            status=data.get("status", "planned"),
+            metadata=data.get("metadata", {})
+        )
+        
+        # Set timestamps if provided
+        if "created_at" in data:
+            allocation.created_at = data["created_at"]
+        if "updated_at" in data:
+            allocation.updated_at = data["updated_at"]
+            
+        return allocation
+
+    def update_status(self, status: str):
+        """Update the allocation status."""
+        self.status = status
+        self.updated_at = datetime.now().timestamp()
+
+    def update_hours(self, allocated_hours: float):
+        """Update the allocated hours."""
+        self.allocated_hours = allocated_hours
+        self.updated_at = datetime.now().timestamp()
+
+    def calculate_utilization(self, available_hours: float) -> float:
+        """
+        Calculate resource utilization percentage.
+        
+        Args:
+            available_hours: Total available hours for the resource
+            
+        Returns:
+            Utilization percentage (0.0 to 1.0+)
+        """
+        if available_hours <= 0:
+            return 0.0
+        return self.allocated_hours / available_hours
+
+    @staticmethod
+    def create_new(
+        resource_id: str,
+        task_id: str,
+        start_date: datetime,
+        end_date: datetime,
+        allocated_hours: float,
+        allocation_type: str = "full",
+        status: str = "planned",
+        metadata: Dict[str, Any] = None
+    ) -> 'ResourceAllocation':
+        """
+        Create a new resource allocation with a generated ID.
+        
+        Args:
+            resource_id: ID of the resource
+            task_id: ID of the task
+            start_date: Start date of allocation
+            end_date: End date of allocation
+            allocated_hours: Number of hours allocated
+            allocation_type: Type of allocation
+            status: Status of allocation
+            metadata: Optional metadata
+            
+        Returns:
+            A new ResourceAllocation instance
+        """
+        allocation_id = f"allocation-{uuid.uuid4()}"
+        return ResourceAllocation(
+            allocation_id=allocation_id,
+            resource_id=resource_id,
+            task_id=task_id,
+            start_date=start_date,
+            end_date=end_date,
+            allocated_hours=allocated_hours,
+            allocation_type=allocation_type,
+            status=status,
+            metadata=metadata
+        )

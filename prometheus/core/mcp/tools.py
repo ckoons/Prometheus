@@ -33,8 +33,7 @@ class PrometheusPlanner:
 
 @mcp_tool(
     name="create_project_plan",
-    description="Create a comprehensive project plan with milestones and timelines",
-    capability="planning"
+    description="Create a comprehensive project plan with milestones and timelines"
 )
 async def create_project_plan(
     project_name: str,
@@ -123,8 +122,7 @@ async def create_project_plan(
 
 @mcp_tool(
     name="analyze_critical_path",
-    description="Analyze the critical path of a project plan",
-    capability="planning"
+    description="Analyze the critical path of a project plan"
 )
 async def analyze_critical_path(
     plan_id: str,
@@ -201,8 +199,7 @@ async def analyze_critical_path(
 
 @mcp_tool(
     name="optimize_timeline",
-    description="Optimize project timeline for efficiency and resource utilization",
-    capability="planning"
+    description="Optimize project timeline for efficiency and resource utilization"
 )
 async def optimize_timeline(
     plan_id: str,
@@ -254,8 +251,7 @@ async def optimize_timeline(
 
 @mcp_tool(
     name="create_milestone",
-    description="Create a new milestone for a project plan",
-    capability="planning"
+    description="Create a new milestone for a project plan"
 )
 async def create_milestone(
     plan_id: str,
@@ -316,8 +312,7 @@ async def create_milestone(
 
 @mcp_tool(
     name="allocate_resources",
-    description="Allocate resources to project tasks and activities",
-    capability="resource_management"
+    description="Allocate resources to project tasks and activities"
 )
 async def allocate_resources(
     plan_id: str,
@@ -386,8 +381,7 @@ async def allocate_resources(
 
 @mcp_tool(
     name="analyze_resource_capacity",
-    description="Analyze resource capacity and identify bottlenecks",
-    capability="resource_management"
+    description="Analyze resource capacity and identify bottlenecks"
 )
 async def analyze_resource_capacity(
     resources: List[Dict[str, Any]],
@@ -463,8 +457,7 @@ async def analyze_resource_capacity(
 
 @mcp_tool(
     name="conduct_retrospective",
-    description="Conduct retrospective analysis of a completed project",
-    capability="retrospective_analysis"
+    description="Conduct retrospective analysis of a completed project"
 )
 async def conduct_retrospective(
     project_id: str,
@@ -542,8 +535,7 @@ async def conduct_retrospective(
 
 @mcp_tool(
     name="analyze_performance_trends",
-    description="Analyze performance trends across multiple projects",
-    capability="retrospective_analysis"
+    description="Analyze performance trends across multiple projects"
 )
 async def analyze_performance_trends(
     projects: List[Dict[str, Any]],
@@ -612,8 +604,7 @@ async def analyze_performance_trends(
 
 @mcp_tool(
     name="generate_improvement_recommendations",
-    description="Generate AI-driven improvement recommendations based on project data",
-    capability="improvement_recommendations"
+    description="Generate AI-driven improvement recommendations based on project data"
 )
 async def generate_improvement_recommendations(
     project_data: Dict[str, Any],
@@ -727,8 +718,7 @@ async def generate_improvement_recommendations(
 
 @mcp_tool(
     name="prioritize_improvements",
-    description="Prioritize improvement initiatives based on impact and effort",
-    capability="improvement_recommendations"
+    description="Prioritize improvement initiatives based on impact and effort"
 )
 async def prioritize_improvements(
     improvements: List[Dict[str, Any]],

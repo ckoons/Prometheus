@@ -7,6 +7,23 @@ This module defines the domain models for timelines in the Prometheus/Epimethius
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Set
 import uuid
+from pydantic import BaseModel, Field
+
+
+class TimelineEvent(BaseModel):
+    """Event on a timeline representing a significant occurrence or action."""
+    event_id: str = Field(default_factory=lambda: f"event-{uuid.uuid4()}")
+    entry_id: Optional[str] = None  # Associated timeline entry, if any
+    event_type: str  # "start", "end", "milestone_reached", "delay", "update", etc.
+    timestamp: datetime = Field(default_factory=datetime.now)
+    description: str
+    actor: Optional[str] = None  # Who/what triggered the event
+    impact: Optional[str] = None  # "high", "medium", "low", "none"
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    class Config:
+        """Pydantic configuration."""
+        arbitrary_types_allowed = True
 
 
 class TimelineEntry:

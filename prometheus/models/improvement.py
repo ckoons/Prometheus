@@ -244,6 +244,159 @@ class Improvement:
         )
 
 
+class ImprovementRecommendation:
+    """Model for a recommendation related to an improvement."""
+
+    def __init__(
+        self,
+        recommendation_id: str,
+        improvement_id: str,
+        title: str,
+        description: str,
+        source: str,  # "ai", "human", "system", etc.
+        priority: str = "medium",
+        status: str = "pending",  # "pending", "accepted", "rejected", "implemented"
+        implementation_details: Optional[str] = None,
+        estimated_effort: Optional[str] = None,
+        estimated_impact: Optional[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None
+    ):
+        self.recommendation_id = recommendation_id
+        self.improvement_id = improvement_id
+        self.title = title
+        self.description = description
+        self.source = source
+        self.priority = priority
+        self.status = status
+        self.implementation_details = implementation_details
+        self.estimated_effort = estimated_effort
+        self.estimated_impact = estimated_impact
+        self.tags = tags or []
+        self.metadata = metadata or {}
+        self.created_at = datetime.now().timestamp()
+        self.updated_at = self.created_at
+        self.status_history = [
+            {
+                "status": status,
+                "timestamp": self.created_at,
+                "comment": "Initial status"
+            }
+        ]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the recommendation to a dictionary."""
+        return {
+            "recommendation_id": self.recommendation_id,
+            "improvement_id": self.improvement_id,
+            "title": self.title,
+            "description": self.description,
+            "source": self.source,
+            "priority": self.priority,
+            "status": self.status,
+            "implementation_details": self.implementation_details,
+            "estimated_effort": self.estimated_effort,
+            "estimated_impact": self.estimated_impact,
+            "tags": self.tags,
+            "metadata": self.metadata,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "status_history": self.status_history
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ImprovementRecommendation':
+        """Create a recommendation from a dictionary."""
+        recommendation = cls(
+            recommendation_id=data["recommendation_id"],
+            improvement_id=data["improvement_id"],
+            title=data["title"],
+            description=data["description"],
+            source=data["source"],
+            priority=data.get("priority", "medium"),
+            status=data.get("status", "pending"),
+            implementation_details=data.get("implementation_details"),
+            estimated_effort=data.get("estimated_effort"),
+            estimated_impact=data.get("estimated_impact"),
+            tags=data.get("tags", []),
+            metadata=data.get("metadata", {})
+        )
+        
+        # Set timestamps and history if provided
+        if "created_at" in data:
+            recommendation.created_at = data["created_at"]
+        if "updated_at" in data:
+            recommendation.updated_at = data["updated_at"]
+        if "status_history" in data:
+            recommendation.status_history = data["status_history"]
+            
+        return recommendation
+
+    def update_status(self, new_status: str, comment: Optional[str] = None) -> None:
+        """
+        Update the recommendation status with history tracking.
+        
+        Args:
+            new_status: New status
+            comment: Optional comment about the status change
+        """
+        self.status = new_status
+        self.updated_at = datetime.now().timestamp()
+        
+        # Add to status history
+        self.status_history.append({
+            "status": new_status,
+            "timestamp": self.updated_at,
+            "comment": comment or f"Status updated to {new_status}"
+        })
+
+    @staticmethod
+    def create_new(
+        improvement_id: str,
+        title: str,
+        description: str,
+        source: str,
+        priority: str = "medium",
+        implementation_details: Optional[str] = None,
+        estimated_effort: Optional[str] = None,
+        estimated_impact: Optional[str] = None,
+        tags: List[str] = None,
+        metadata: Dict[str, Any] = None
+    ) -> 'ImprovementRecommendation':
+        """
+        Create a new recommendation with a generated ID.
+        
+        Args:
+            improvement_id: ID of the associated improvement
+            title: Title of the recommendation
+            description: Description of the recommendation
+            source: Source of the recommendation
+            priority: Optional priority
+            implementation_details: Optional implementation details
+            estimated_effort: Optional effort estimation
+            estimated_impact: Optional impact estimation
+            tags: Optional list of tags
+            metadata: Optional metadata
+            
+        Returns:
+            A new ImprovementRecommendation instance
+        """
+        recommendation_id = f"recommendation-{uuid.uuid4()}"
+        return ImprovementRecommendation(
+            recommendation_id=recommendation_id,
+            improvement_id=improvement_id,
+            title=title,
+            description=description,
+            source=source,
+            priority=priority,
+            implementation_details=implementation_details,
+            estimated_effort=estimated_effort,
+            estimated_impact=estimated_impact,
+            tags=tags,
+            metadata=metadata
+        )
+
+
 class ImprovementPattern:
     """Model for a pattern of improvements identified across multiple retrospectives or projects."""
 

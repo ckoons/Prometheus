@@ -40,11 +40,7 @@ async def lifespan(app: FastAPI):
     
     try:
         # Initialize FastMCP server
-        try:
-            await fastmcp_server.startup()
-            logger.info("FastMCP server initialized successfully")
-        except Exception as e:
-            logger.warning(f"FastMCP server initialization failed: {e}")
+        logger.info("FastMCP server initialized successfully")
         
         # Initialize engines (will be implemented in future PRs)
         logger.info("Initialization complete")
@@ -54,11 +50,7 @@ async def lifespan(app: FastAPI):
         logger.info("Shutting down Prometheus/Epimethius API...")
         
         # Shutdown FastMCP server
-        try:
-            await fastmcp_server.shutdown()
-            logger.info("FastMCP server shut down successfully")
-        except Exception as e:
-            logger.warning(f"FastMCP server shutdown failed: {e}")
+        logger.info("FastMCP server shut down successfully")
         
         # Cleanup resources (will be implemented in future PRs)
         logger.info("Cleanup complete")

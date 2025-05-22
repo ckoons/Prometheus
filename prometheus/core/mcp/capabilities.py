@@ -5,7 +5,7 @@ This module defines the FastMCP capabilities that group related
 planning and analysis tools.
 """
 
-from tekton.mcp.fastmcp import mcp_capability
+from tekton.mcp.fastmcp.decorators import mcp_capability
 
 
 # Planning Capability - Project planning and timeline creation
