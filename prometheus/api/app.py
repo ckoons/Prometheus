@@ -64,7 +64,7 @@ def create_app() -> FastAPI:
         FastAPI application
     """
     # Use standardized port configuration
-    from ..utils.port_config import get_prometheus_port
+    from tekton.utils.port_config import get_prometheus_port
     port = get_prometheus_port()
     
     # Create the FastAPI application
@@ -175,7 +175,7 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     
-    from ..utils.port_config import get_prometheus_port
+    from tekton.utils.port_config import get_prometheus_port
     port = get_prometheus_port()
     uvicorn.run(
         "prometheus.api.app:app",
