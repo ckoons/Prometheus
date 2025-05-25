@@ -6,12 +6,18 @@ It implements the Single Port Architecture pattern with path-based routing.
 """
 
 import os
+import sys
+import asyncio
 import logging
 from typing import Dict, Optional
 from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+
+# Import Hermes registration utility
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "shared", "utils"))
+from hermes_registration import HermesRegistration, heartbeat_loop
 
 # Configure logging
 logging.basicConfig(
@@ -38,7 +44,36 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize components
     logger.info("Starting Prometheus/Epimethius API...")
     
+    # Get port for registration
+    from tekton.utils.port_config import get_prometheus_port
+    port = get_prometheus_port()
+    
+    # Register with Hermes
+    hermes_registration = HermesRegistration()
+    heartbeat_task = None
+    
     try:
+        await hermes_registration.register_component(
+            component_name="prometheus",
+            port=port,
+            version="0.1.0",
+            capabilities=[
+                "strategic_planning",
+                "goal_management",
+                "retrospective_analysis",
+                "timeline_tracking",
+                "resource_optimization"
+            ],
+            metadata={
+                "description": "Strategic planning and goal management",
+                "category": "planning"
+            }
+        )
+        
+        # Start heartbeat task
+        if hermes_registration.is_registered:
+            heartbeat_task = asyncio.create_task(heartbeat_loop(hermes_registration, "prometheus"))
+        
         # Initialize FastMCP server
         logger.info("FastMCP server initialized successfully")
         
@@ -48,6 +83,18 @@ async def lifespan(app: FastAPI):
     finally:
         # Cleanup: Shutdown components
         logger.info("Shutting down Prometheus/Epimethius API...")
+        
+        # Cancel heartbeat task
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Deregister from Hermes
+        if hermes_registration.is_registered:
+            await hermes_registration.deregister("prometheus")
         
         # Shutdown FastMCP server
         logger.info("FastMCP server shut down successfully")
@@ -134,10 +181,13 @@ def create_app() -> FastAPI:
     # Health check
     @app.get("/health")
     async def health_check():
+        """Health check endpoint following Tekton standards"""
         return {
             "status": "healthy",
+            "component": "prometheus",
             "version": "0.1.0",
-            "port": port
+            "port": port,
+            "message": "Prometheus is running normally"
         }
     
     # Mount Prometheus (forward planning) API routes
