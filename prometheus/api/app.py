@@ -8,7 +8,6 @@ It implements the Single Port Architecture pattern with path-based routing.
 import os
 import sys
 import asyncio
-import logging
 from typing import Dict, Optional
 from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,15 +19,16 @@ tekton_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'
 if tekton_root not in sys.path:
     sys.path.insert(0, tekton_root)
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
-logger = logging.getLogger("prometheus.api")
-
-# Import Hermes registration utility with correct path
+# Import shared utilities
 from shared.utils.hermes_registration import HermesRegistration, heartbeat_loop
+from shared.utils.logging_setup import setup_component_logging
+from shared.utils.env_config import get_component_config
+from shared.utils.errors import StartupError
+from shared.utils.startup import component_startup, StartupMetrics
+from shared.utils.shutdown import GracefulShutdown
+
+# Set up logging
+logger = setup_component_logging("prometheus")
 
 # Import endpoint routers
 from .endpoints import planning, tasks, timelines, resources
@@ -48,9 +48,9 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize components
     logger.info("Starting Prometheus/Epimethius API...")
     
-    # Get port for registration
-    from tekton.utils.port_config import get_prometheus_port
-    port = get_prometheus_port()
+    # Get port configuration
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
     
     # Register with Hermes
     hermes_registration = HermesRegistration()
@@ -79,10 +79,18 @@ async def lifespan(app: FastAPI):
             heartbeat_task = asyncio.create_task(heartbeat_loop(hermes_registration, "prometheus"))
         
         # Initialize FastMCP server
-        logger.info("FastMCP server initialized successfully")
+        try:
+            await fastmcp_server.startup()
+            logger.info("FastMCP server initialized successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server initialization failed: {e}")
         
         # Initialize engines (will be implemented in future PRs)
         logger.info("Initialization complete")
+        
+        # Store registration for access in endpoints
+        app.state.hermes_registration = hermes_registration
+        
         yield
     finally:
         # Cleanup: Shutdown components
@@ -101,7 +109,14 @@ async def lifespan(app: FastAPI):
             await hermes_registration.deregister("prometheus")
         
         # Shutdown FastMCP server
-        logger.info("FastMCP server shut down successfully")
+        try:
+            await fastmcp_server.shutdown()
+            logger.info("FastMCP server shut down successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server shutdown failed: {e}")
+        
+        # Give sockets time to close on macOS
+        await asyncio.sleep(0.5)
         
         # Cleanup resources (will be implemented in future PRs)
         logger.info("Cleanup complete")
@@ -114,9 +129,9 @@ def create_app() -> FastAPI:
     Returns:
         FastAPI application
     """
-    # Use standardized port configuration
-    from tekton.utils.port_config import get_prometheus_port
-    port = get_prometheus_port()
+    # Get port configuration
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
     
     # Create the FastAPI application
     app = FastAPI(
@@ -229,8 +244,8 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
     
-    from tekton.utils.port_config import get_prometheus_port
-    port = get_prometheus_port()
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
     uvicorn.run(
         "prometheus.api.app:app",
         host="0.0.0.0",
