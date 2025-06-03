@@ -242,13 +242,11 @@ app = create_app()
 
 # Run the application if this module is executed directly
 if __name__ == "__main__":
-    import uvicorn
+    from shared.utils.socket_server import run_component_server
     
-    config = get_component_config()
-    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
-    uvicorn.run(
-        "prometheus.api.app:app",
-        host="0.0.0.0",
-        port=port,
-        reload=True
+    run_component_server(
+        component_name="prometheus",
+        app_module="prometheus.api.app",
+        default_port=int(os.environ.get("PROMETHEUS_PORT")),
+        reload=False
     )

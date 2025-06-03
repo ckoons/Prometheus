@@ -129,5 +129,5 @@ if __name__ == "__main__":
         "prometheus.api.fixed_app:app",
         host="0.0.0.0",
         port=port,
-        reload=True
+        reload=False
     )
