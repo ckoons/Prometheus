@@ -6,10 +6,11 @@ This module defines the API models for the Epimethius retrospective endpoints.
 
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Set
-from pydantic import BaseModel, Field, validator
+from pydantic import Field
+from tekton.models.base import TektonBaseModel
 
 
-class RetroItemCreate(BaseModel):
+class RetroItemCreate(TektonBaseModel):
     """Schema for retrospective item creation."""
     content: str = Field(..., description="Content of the item", min_length=1)
     category: str = Field(..., description="Category of the item")
@@ -18,7 +19,7 @@ class RetroItemCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class RetroItemUpdate(BaseModel):
+class RetroItemUpdate(TektonBaseModel):
     """Schema for retrospective item update."""
     content: Optional[str] = Field(None, description="Content of the item", min_length=1)
     category: Optional[str] = Field(None, description="Category of the item")
@@ -27,7 +28,7 @@ class RetroItemUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ActionItemCreate(BaseModel):
+class ActionItemCreate(TektonBaseModel):
     """Schema for action item creation."""
     title: str = Field(..., description="Title of the action item", min_length=1)
     description: str = Field(..., description="Description of the action item", min_length=1)
@@ -39,7 +40,7 @@ class ActionItemCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ActionItemUpdate(BaseModel):
+class ActionItemUpdate(TektonBaseModel):
     """Schema for action item update."""
     title: Optional[str] = Field(None, description="Title of the action item", min_length=1)
     description: Optional[str] = Field(None, description="Description of the action item", min_length=1)
@@ -53,7 +54,7 @@ class ActionItemUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class RetrospectiveCreate(BaseModel):
+class RetrospectiveCreate(TektonBaseModel):
     """Schema for retrospective creation."""
     plan_id: str = Field(..., description="ID of the plan")
     name: str = Field(..., description="Name of the retrospective", min_length=1)
@@ -65,7 +66,7 @@ class RetrospectiveCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class RetrospectiveUpdate(BaseModel):
+class RetrospectiveUpdate(TektonBaseModel):
     """Schema for retrospective update."""
     name: Optional[str] = Field(None, description="Name of the retrospective", min_length=1)
     format: Optional[str] = Field(None, description="Format of the retrospective", 
@@ -78,7 +79,7 @@ class RetrospectiveUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ExecutionIssueCreate(BaseModel):
+class ExecutionIssueCreate(TektonBaseModel):
     """Schema for execution issue creation."""
     title: str = Field(..., description="Title of the issue", min_length=1)
     description: str = Field(..., description="Description of the issue", min_length=1)
@@ -90,7 +91,7 @@ class ExecutionIssueCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ExecutionIssueUpdate(BaseModel):
+class ExecutionIssueUpdate(TektonBaseModel):
     """Schema for execution issue update."""
     title: Optional[str] = Field(None, description="Title of the issue", min_length=1)
     description: Optional[str] = Field(None, description="Description of the issue", min_length=1)
@@ -104,7 +105,7 @@ class ExecutionIssueUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TaskExecutionUpdate(BaseModel):
+class TaskExecutionUpdate(TektonBaseModel):
     """Schema for task execution update."""
     task_id: str = Field(..., description="ID of the task")
     status: Optional[str] = Field(None, description="Status of the task", 
@@ -119,7 +120,7 @@ class TaskExecutionUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class MilestoneExecutionUpdate(BaseModel):
+class MilestoneExecutionUpdate(TektonBaseModel):
     """Schema for milestone execution update."""
     milestone_id: str = Field(..., description="ID of the milestone")
     status: Optional[str] = Field(None, description="Status of the milestone", 
@@ -129,7 +130,7 @@ class MilestoneExecutionUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ExecutionRecordCreate(BaseModel):
+class ExecutionRecordCreate(TektonBaseModel):
     """Schema for execution record creation."""
     plan_id: str = Field(..., description="ID of the plan")
     record_date: Optional[datetime] = Field(None, description="Date of the record")
@@ -139,7 +140,7 @@ class ExecutionRecordCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ExecutionRecordUpdate(BaseModel):
+class ExecutionRecordUpdate(TektonBaseModel):
     """Schema for execution record update."""
     task_updates: Optional[List[TaskExecutionUpdate]] = Field(None, description="Task execution updates")
     milestone_updates: Optional[List[MilestoneExecutionUpdate]] = Field(None, description="Milestone execution updates")
@@ -148,7 +149,7 @@ class ExecutionRecordUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class VarianceAnalysisRequest(BaseModel):
+class VarianceAnalysisRequest(TektonBaseModel):
     """Schema for variance analysis request."""
     plan_id: str = Field(..., description="ID of the plan")
     execution_record_id: Optional[str] = Field(None, description="ID of the execution record")
@@ -158,7 +159,7 @@ class VarianceAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class PerformanceMetricCreate(BaseModel):
+class PerformanceMetricCreate(TektonBaseModel):
     """Schema for performance metric creation."""
     name: str = Field(..., description="Name of the metric", min_length=1)
     description: str = Field(..., description="Description of the metric", min_length=1)
@@ -172,7 +173,7 @@ class PerformanceMetricCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class PerformanceAnalysisRequest(BaseModel):
+class PerformanceAnalysisRequest(TektonBaseModel):
     """Schema for performance analysis request."""
     plan_id: str = Field(..., description="ID of the plan")
     analysis_type: str = Field(..., description="Type of analysis", 
@@ -184,7 +185,7 @@ class PerformanceAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TeamPerformanceRequest(BaseModel):
+class TeamPerformanceRequest(TektonBaseModel):
     """Schema for team performance analysis request."""
     team_id: str = Field(..., description="ID of the team")
     time_range: Optional[Dict[str, Any]] = Field(None, description="Time range for the analysis")
@@ -194,7 +195,7 @@ class TeamPerformanceRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TrendAnalysisRequest(BaseModel):
+class TrendAnalysisRequest(TektonBaseModel):
     """Schema for trend analysis request."""
     metric_types: List[str] = Field(..., description="Types of metrics to analyze")
     time_range: Dict[str, Any] = Field(..., description="Time range for the analysis")
@@ -205,7 +206,7 @@ class TrendAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class BottleneckAnalysisRequest(BaseModel):
+class BottleneckAnalysisRequest(TektonBaseModel):
     """Schema for bottleneck analysis request."""
     plan_id: str = Field(..., description="ID of the plan")
     analysis_scope: Optional[str] = Field("all", description="Scope of the analysis", 
@@ -215,7 +216,7 @@ class BottleneckAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMRetrospectiveAnalysis(BaseModel):
+class LLMRetrospectiveAnalysis(TektonBaseModel):
     """Schema for LLM-based retrospective analysis."""
     retrospective_id: str = Field(..., description="ID of the retrospective to analyze")
     analysis_type: str = Field(

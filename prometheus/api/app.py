@@ -50,7 +50,7 @@ async def lifespan(app: FastAPI):
     
     # Get port configuration
     config = get_component_config()
-    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
     
     # Register with Hermes
     hermes_registration = HermesRegistration()
@@ -131,7 +131,7 @@ def create_app() -> FastAPI:
     """
     # Get port configuration
     config = get_component_config()
-    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
     
     # Create the FastAPI application
     app = FastAPI(
@@ -245,7 +245,7 @@ if __name__ == "__main__":
     import uvicorn
     
     config = get_component_config()
-    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT", 8004))
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
     uvicorn.run(
         "prometheus.api.app:app",
         host="0.0.0.0",

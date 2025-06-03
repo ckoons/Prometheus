@@ -6,10 +6,11 @@ This module defines the API models for the Epimethius improvement endpoints.
 
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Set
-from pydantic import BaseModel, Field, validator
+from pydantic import Field
+from tekton.models.base import TektonBaseModel
 
 
-class ImprovementCreate(BaseModel):
+class ImprovementCreate(TektonBaseModel):
     """Schema for improvement creation."""
     title: str = Field(..., description="Title of the improvement", min_length=1)
     description: str = Field(..., description="Description of the improvement", min_length=1)
@@ -26,7 +27,7 @@ class ImprovementCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ImprovementUpdate(BaseModel):
+class ImprovementUpdate(TektonBaseModel):
     """Schema for improvement update."""
     title: Optional[str] = Field(None, description="Title of the improvement", min_length=1)
     description: Optional[str] = Field(None, description="Description of the improvement", min_length=1)
@@ -42,14 +43,14 @@ class ImprovementUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ImprovementStatusUpdate(BaseModel):
+class ImprovementStatusUpdate(TektonBaseModel):
     """Schema for improvement status update."""
     status: str = Field(..., description="New status of the improvement", 
                        pattern="^(open|in_progress|implemented|verified)$")
     comment: Optional[str] = Field(None, description="Comment about the status change")
 
 
-class ImprovementPatternCreate(BaseModel):
+class ImprovementPatternCreate(TektonBaseModel):
     """Schema for improvement pattern creation."""
     name: str = Field(..., description="Name of the pattern", min_length=1)
     description: str = Field(..., description="Description of the pattern", min_length=1)
@@ -61,7 +62,7 @@ class ImprovementPatternCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ImprovementPatternUpdate(BaseModel):
+class ImprovementPatternUpdate(TektonBaseModel):
     """Schema for improvement pattern update."""
     name: Optional[str] = Field(None, description="Name of the pattern", min_length=1)
     description: Optional[str] = Field(None, description="Description of the pattern", min_length=1)
@@ -74,7 +75,7 @@ class ImprovementPatternUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ImprovementSuggestionRequest(BaseModel):
+class ImprovementSuggestionRequest(TektonBaseModel):
     """Schema for improvement suggestion request."""
     source_type: str = Field(..., description="Type of source for suggestions", 
                            pattern="^(retrospective|performance|pattern|history|custom)$")
@@ -85,7 +86,7 @@ class ImprovementSuggestionRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ImprovementProgressRequest(BaseModel):
+class ImprovementProgressRequest(TektonBaseModel):
     """Schema for improvement progress request."""
     source_type: Optional[str] = Field(None, description="Type of source for improvements", 
                                      pattern="^(retrospective|performance|pattern|all)$")
@@ -97,7 +98,7 @@ class ImprovementProgressRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMImprovementSuggestion(BaseModel):
+class LLMImprovementSuggestion(TektonBaseModel):
     """Schema for LLM-based improvement suggestion."""
     context_type: str = Field(..., description="Type of context for suggestions", 
                             pattern="^(retrospective|performance|execution|history|custom)$")
@@ -109,7 +110,7 @@ class LLMImprovementSuggestion(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMRootCauseAnalysis(BaseModel):
+class LLMRootCauseAnalysis(TektonBaseModel):
     """Schema for LLM-based root cause analysis."""
     issue_id: str = Field(..., description="ID of the issue to analyze")
     context_ids: Optional[List[str]] = Field(None, description="IDs of additional context")

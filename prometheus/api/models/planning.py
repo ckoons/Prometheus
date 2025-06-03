@@ -6,10 +6,11 @@ This module defines the API models for the Prometheus planning endpoints.
 
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Set
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, field_validator
+from tekton.models.base import TektonBaseModel
 
 
-class TaskCreate(BaseModel):
+class TaskCreate(TektonBaseModel):
     """Schema for task creation."""
     name: str = Field(..., description="Name of the task", min_length=1)
     description: str = Field(..., description="Description of the task", min_length=1)
@@ -23,14 +24,15 @@ class TaskCreate(BaseModel):
     end_date: Optional[datetime] = Field(None, description="Planned end date")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if v and 'start_date' in values and values['start_date'] and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if v and 'start_date' in info.data and info.data['start_date'] and v < info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
 
 
-class TaskUpdate(BaseModel):
+class TaskUpdate(TektonBaseModel):
     """Schema for task update."""
     name: Optional[str] = Field(None, description="Name of the task", min_length=1)
     description: Optional[str] = Field(None, description="Description of the task", min_length=1)
@@ -48,14 +50,15 @@ class TaskUpdate(BaseModel):
     progress: Optional[float] = Field(None, description="Progress of the task", ge=0, le=1)
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if v and 'start_date' in values and values['start_date'] and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if v and 'start_date' in info.data and info.data['start_date'] and v < info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
 
 
-class MilestoneCreate(BaseModel):
+class MilestoneCreate(TektonBaseModel):
     """Schema for milestone creation."""
     name: str = Field(..., description="Name of the milestone", min_length=1)
     description: str = Field(..., description="Description of the milestone", min_length=1)
@@ -64,7 +67,7 @@ class MilestoneCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class MilestoneUpdate(BaseModel):
+class MilestoneUpdate(TektonBaseModel):
     """Schema for milestone update."""
     name: Optional[str] = Field(None, description="Name of the milestone", min_length=1)
     description: Optional[str] = Field(None, description="Description of the milestone", min_length=1)
@@ -76,7 +79,7 @@ class MilestoneUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class PlanCreate(BaseModel):
+class PlanCreate(TektonBaseModel):
     """Schema for plan creation."""
     name: str = Field(..., description="Name of the plan", min_length=1)
     description: str = Field(..., description="Description of the plan", min_length=1)
@@ -87,14 +90,15 @@ class PlanCreate(BaseModel):
     requirements: Optional[List[str]] = Field(None, description="IDs of related requirements")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if v and 'start_date' in values and values['start_date'] and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if v and 'start_date' in info.data and info.data['start_date'] and v < info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
 
 
-class PlanUpdate(BaseModel):
+class PlanUpdate(TektonBaseModel):
     """Schema for plan update."""
     name: Optional[str] = Field(None, description="Name of the plan", min_length=1)
     description: Optional[str] = Field(None, description="Description of the plan", min_length=1)
@@ -105,14 +109,15 @@ class PlanUpdate(BaseModel):
     requirements: Optional[List[str]] = Field(None, description="IDs of related requirements")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if v and 'start_date' in values and values['start_date'] and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if v and 'start_date' in info.data and info.data['start_date'] and v < info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
 
 
-class PlanFromRequirements(BaseModel):
+class PlanFromRequirements(TektonBaseModel):
     """Schema for creating a plan from requirements."""
     name: str = Field(..., description="Name of the plan", min_length=1)
     description: Optional[str] = Field(None, description="Description of the plan")
@@ -126,7 +131,7 @@ class PlanFromRequirements(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ResourceCreate(BaseModel):
+class ResourceCreate(TektonBaseModel):
     """Schema for resource creation."""
     name: str = Field(..., description="Name of the resource", min_length=1)
     resource_type: str = Field(..., description="Type of the resource", 
@@ -138,7 +143,7 @@ class ResourceCreate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ResourceUpdate(BaseModel):
+class ResourceUpdate(TektonBaseModel):
     """Schema for resource update."""
     name: Optional[str] = Field(None, description="Name of the resource", min_length=1)
     resource_type: Optional[str] = Field(None, description="Type of the resource", 
@@ -150,7 +155,7 @@ class ResourceUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ResourceAllocation(BaseModel):
+class ResourceAllocation(TektonBaseModel):
     """Schema for resource allocation to a plan."""
     plan_id: str = Field(..., description="ID of the plan")
     allocations: Dict[str, List[Dict[str, Any]]] = Field(
@@ -166,7 +171,7 @@ class ResourceAllocation(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TaskDependency(BaseModel):
+class TaskDependency(TektonBaseModel):
     """Schema for task dependency."""
     predecessor_id: str = Field(..., description="ID of the predecessor task")
     successor_id: str = Field(..., description="ID of the successor task")
@@ -178,7 +183,7 @@ class TaskDependency(BaseModel):
     lag: Optional[int] = Field(0, description="Lag time in days")
 
 
-class TimelineEntry(BaseModel):
+class TimelineEntry(TektonBaseModel):
     """Schema for timeline entry."""
     entity_id: str = Field(..., description="ID of the entity (task or milestone)")
     entity_type: str = Field(..., description="Type of the entity", pattern="^(task|milestone)$")
@@ -188,21 +193,22 @@ class TimelineEntry(BaseModel):
     dependencies: Optional[List[str]] = Field(None, description="IDs of dependent entries")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
     
-    @validator('end_date')
-    def end_date_after_start_date(cls, v, values):
-        if v and 'start_date' in values and values['start_date'] and v < values['start_date']:
+    @field_validator('end_date')
+    @classmethod
+    def end_date_after_start_date(cls, v, info):
+        if v and 'start_date' in info.data and info.data['start_date'] and v < info.data['start_date']:
             raise ValueError('end_date must be after start_date')
         return v
 
 
-class TimelineCreate(BaseModel):
+class TimelineCreate(TektonBaseModel):
     """Schema for timeline creation."""
     plan_id: str = Field(..., description="ID of the plan")
     entries: List[TimelineEntry] = Field(..., description="Timeline entries")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TimelineUpdate(BaseModel):
+class TimelineUpdate(TektonBaseModel):
     """Schema for timeline update."""
     entries: Optional[List[TimelineEntry]] = Field(None, description="Timeline entries to update")
     entries_to_remove: Optional[List[str]] = Field(None, description="Entry IDs to remove")
@@ -210,7 +216,7 @@ class TimelineUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMPlanAnalysis(BaseModel):
+class LLMPlanAnalysis(TektonBaseModel):
     """Schema for LLM-based plan analysis."""
     plan_id: str = Field(..., description="ID of the plan to analyze")
     analysis_type: str = Field(

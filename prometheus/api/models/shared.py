@@ -6,10 +6,11 @@ This module defines the shared API models for the Prometheus/Epimethius Planning
 
 from datetime import datetime
 from typing import Dict, List, Any, Optional, Set
-from pydantic import BaseModel, Field, validator
+from pydantic import Field
+from tekton.models.base import TektonBaseModel
 
 
-class TrackingUpdate(BaseModel):
+class TrackingUpdate(TektonBaseModel):
     """Schema for tracking update."""
     plan_id: str = Field(..., description="ID of the plan")
     task_updates: Optional[Dict[str, float]] = Field(None, description="Task progress updates")
@@ -20,7 +21,7 @@ class TrackingUpdate(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TrackingRequest(BaseModel):
+class TrackingRequest(TektonBaseModel):
     """Schema for tracking data request."""
     plan_id: str = Field(..., description="ID of the plan")
     include_tasks: Optional[bool] = Field(True, description="Whether to include tasks")
@@ -30,7 +31,7 @@ class TrackingRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class BurndownRequest(BaseModel):
+class BurndownRequest(TektonBaseModel):
     """Schema for burndown chart data request."""
     plan_id: str = Field(..., description="ID of the plan")
     chart_type: str = Field("burndown", description="Type of chart", 
@@ -44,7 +45,7 @@ class BurndownRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class TrackingMetricsRequest(BaseModel):
+class TrackingMetricsRequest(TektonBaseModel):
     """Schema for tracking metrics request."""
     plan_id: str = Field(..., description="ID of the plan")
     metrics: List[str] = Field(..., description="Metrics to include")
@@ -54,7 +55,7 @@ class TrackingMetricsRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMAnalysisRequest(BaseModel):
+class LLMAnalysisRequest(TektonBaseModel):
     """Schema for LLM analysis request."""
     content: str = Field(..., description="Content to analyze")
     analysis_type: str = Field(..., description="Type of analysis")
@@ -63,7 +64,7 @@ class LLMAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class LLMRiskAnalysisRequest(BaseModel):
+class LLMRiskAnalysisRequest(TektonBaseModel):
     """Schema for LLM risk analysis request."""
     plan_id: str = Field(..., description="ID of the plan")
     include_history: Optional[bool] = Field(True, description="Whether to include historical data")
@@ -73,7 +74,7 @@ class LLMRiskAnalysisRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class StandardResponse(BaseModel):
+class StandardResponse(TektonBaseModel):
     """Standard response model."""
     status: str = Field(..., description="Status of the response")
     message: str = Field(..., description="Message describing the response")
@@ -81,7 +82,7 @@ class StandardResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class PaginatedResponse(BaseModel):
+class PaginatedResponse(TektonBaseModel):
     """Paginated response model."""
     status: str = Field(..., description="Status of the response")
     message: str = Field(..., description="Message describing the response")
@@ -93,7 +94,7 @@ class PaginatedResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
 
 
-class ErrorResponse(BaseModel):
+class ErrorResponse(TektonBaseModel):
     """Error response model."""
     status: str = Field("error", description="Status of the response")
     message: str = Field(..., description="Error message")
@@ -101,7 +102,7 @@ class ErrorResponse(BaseModel):
     details: Optional[Any] = Field(None, description="Error details")
 
 
-class SearchRequest(BaseModel):
+class SearchRequest(TektonBaseModel):
     """Search request model."""
     query: str = Field(..., description="Search query")
     entity_types: Optional[List[str]] = Field(None, description="Types of entities to search")

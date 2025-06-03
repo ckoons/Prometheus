@@ -7,10 +7,11 @@ This module defines the domain models for timelines in the Prometheus/Epimethius
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Set
 import uuid
-from pydantic import BaseModel, Field
+from pydantic import Field
+from tekton.models.base import TektonBaseModel
 
 
-class TimelineEvent(BaseModel):
+class TimelineEvent(TektonBaseModel):
     """Event on a timeline representing a significant occurrence or action."""
     event_id: str = Field(default_factory=lambda: f"event-{uuid.uuid4()}")
     entry_id: Optional[str] = None  # Associated timeline entry, if any
@@ -21,9 +22,6 @@ class TimelineEvent(BaseModel):
     impact: Optional[str] = None  # "high", "medium", "low", "none"
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        """Pydantic configuration."""
-        arbitrary_types_allowed = True
 
 
 class TimelineEntry:
