@@ -8,6 +8,7 @@ It implements the Single Port Architecture pattern with path-based routing.
 import os
 import sys
 import asyncio
+import time
 from typing import Dict, Optional
 from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,8 +28,21 @@ from shared.utils.errors import StartupError
 from shared.utils.startup import component_startup, StartupMetrics
 from shared.utils.shutdown import GracefulShutdown
 
+# Import shared API utilities
+from shared.api.documentation import get_openapi_configuration
+from shared.api.endpoints import create_ready_endpoint, create_discovery_endpoint, EndpointInfo
+from shared.api.routers import create_standard_routers, mount_standard_routers
+
 # Set up logging
 logger = setup_component_logging("prometheus")
+
+# Component configuration
+COMPONENT_NAME = "prometheus"
+COMPONENT_VERSION = "0.1.0"
+COMPONENT_DESCRIPTION = "Strategic planning and goal management system for Tekton ecosystem"
+
+# Global start time for readiness checks
+start_time = time.time()
 
 # Import endpoint routers
 from .endpoints import planning, tasks, timelines, resources
@@ -58,9 +72,9 @@ async def lifespan(app: FastAPI):
     
     try:
         await hermes_registration.register_component(
-            component_name="prometheus",
+            component_name=COMPONENT_NAME,
             port=port,
-            version="0.1.0",
+            version=COMPONENT_VERSION,
             capabilities=[
                 "strategic_planning",
                 "goal_management",
@@ -69,7 +83,7 @@ async def lifespan(app: FastAPI):
                 "resource_optimization"
             ],
             metadata={
-                "description": "Strategic planning and goal management",
+                "description": COMPONENT_DESCRIPTION,
                 "category": "planning"
             }
         )
@@ -133,11 +147,13 @@ def create_app() -> FastAPI:
     config = get_component_config()
     port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
     
-    # Create the FastAPI application
+    # Create the FastAPI application with OpenAPI configuration
     app = FastAPI(
-        title="Prometheus/Epimethius Planning System API",
-        description="API for the Prometheus/Epimethius Planning System",
-        version="0.1.0",
+        **get_openapi_configuration(
+            component_name=COMPONENT_NAME,
+            component_version=COMPONENT_VERSION,
+            component_description=COMPONENT_DESCRIPTION
+        ),
         lifespan=lifespan
     )
     
@@ -149,6 +165,64 @@ def create_app() -> FastAPI:
         allow_methods=["*"],  # Allow all methods
         allow_headers=["*"],  # Allow all headers
     )
+    
+    # Create standard routers
+    routers = create_standard_routers(COMPONENT_NAME)
+    
+    # Add infrastructure endpoints
+    @routers.root.get("/ready")
+    async def ready():
+        """Readiness check endpoint."""
+        ready_check = create_ready_endpoint(
+            component_name=COMPONENT_NAME,
+            component_version=COMPONENT_VERSION,
+            start_time=start_time,
+            readiness_check=lambda: True  # Add proper checks when engines are implemented
+        )
+        return await ready_check()
+    
+    
+    # Add discovery endpoint
+    routers.v1.add_api_route(
+        "/discovery",
+        create_discovery_endpoint(
+            component_name=COMPONENT_NAME,
+            component_version=COMPONENT_VERSION,
+            component_description=COMPONENT_DESCRIPTION,
+            endpoints=[
+                EndpointInfo(path="/health", method="GET", description="Health check"),
+                EndpointInfo(path="/ready", method="GET", description="Readiness check"),
+                EndpointInfo(path="/api/v1/discovery", method="GET", description="Service discovery"),
+                EndpointInfo(path="/api/v1/plans", method="*", description="Strategic plans management"),
+                EndpointInfo(path="/api/v1/goals", method="*", description="Goal management"),
+                EndpointInfo(path="/api/v1/tasks", method="*", description="Task planning"),
+                EndpointInfo(path="/api/v1/timelines", method="*", description="Timeline tracking"),
+                EndpointInfo(path="/api/v1/resources", method="*", description="Resource optimization"),
+                EndpointInfo(path="/api/v1/retrospectives", method="*", description="Retrospective analysis"),
+                EndpointInfo(path="/api/v1/history", method="*", description="Historical analysis"),
+                EndpointInfo(path="/api/v1/improvements", method="*", description="Improvement tracking"),
+                EndpointInfo(path="/api/v1/tracking", method="*", description="Progress tracking"),
+                EndpointInfo(path="/api/v1/llm", method="*", description="LLM integration"),
+                EndpointInfo(path="/api/v1/mcp", method="*", description="MCP endpoints"),
+                EndpointInfo(path="/ws", method="WS", description="WebSocket for real-time updates")
+            ],
+            capabilities=[
+                "strategic_planning",
+                "goal_management",
+                "retrospective_analysis",
+                "timeline_tracking",
+                "resource_optimization"
+            ],
+            metadata={
+                "category": "planning",
+                "dual_nature": "Prometheus (forward planning) + Epimethius (retrospective analysis)"
+            }
+        ),
+        methods=["GET"]
+    )
+    
+    # Mount standard routers
+    mount_standard_routers(app, routers)
     
     # Add error handlers
     @app.exception_handler(HTTPException)
@@ -209,29 +283,24 @@ def create_app() -> FastAPI:
             "message": "Prometheus is running normally"
         }
     
-    # Mount Prometheus (forward planning) API routes
-    prometheus_router = APIRouter(prefix="/api", tags=["prometheus"])
-    prometheus_router.include_router(planning.router)
-    prometheus_router.include_router(tasks.router)
-    prometheus_router.include_router(timelines.router)
-    prometheus_router.include_router(resources.router)
-    app.include_router(prometheus_router)
+    # Mount business logic routers under v1
+    # Prometheus (forward planning) API routes
+    routers.v1.include_router(planning.router, tags=["Prometheus - Planning"])
+    routers.v1.include_router(tasks.router, tags=["Prometheus - Tasks"])
+    routers.v1.include_router(timelines.router, tags=["Prometheus - Timelines"])
+    routers.v1.include_router(resources.router, tags=["Prometheus - Resources"])
     
-    # Mount Epimethius (retrospective analysis) API routes
-    epimethius_router = APIRouter(prefix="/api", tags=["epimethius"])
-    epimethius_router.include_router(retrospective.router)
-    epimethius_router.include_router(history.router)
-    epimethius_router.include_router(improvement.router)
-    app.include_router(epimethius_router)
+    # Epimethius (retrospective analysis) API routes
+    routers.v1.include_router(retrospective.router, tags=["Epimethius - Retrospective"])
+    routers.v1.include_router(history.router, tags=["Epimethius - History"])
+    routers.v1.include_router(improvement.router, tags=["Epimethius - Improvement"])
     
-    # Mount shared API routes
-    shared_router = APIRouter(prefix="/api", tags=["shared"])
-    shared_router.include_router(tracking.router)
-    shared_router.include_router(llm_integration.router)
-    app.include_router(shared_router)
+    # Shared API routes
+    routers.v1.include_router(tracking.router, tags=["Shared - Tracking"])
+    routers.v1.include_router(llm_integration.router, tags=["Shared - LLM"])
     
     # Mount MCP API routes
-    app.include_router(mcp_router)
+    routers.v1.include_router(mcp_router, prefix="/mcp", tags=["MCP"])
     
     return app
 
