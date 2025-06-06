@@ -10,7 +10,10 @@ TEKTON_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # Set environment variables
 PROMETHEUS_PORT=8006
 export PROMETHEUS_PORT
-export PYTHONPATH="${SCRIPT_DIR}:${TEKTON_ROOT}:${PYTHONPATH}"
+
+# Set up environment and Python path
+source "$TEKTON_ROOT/shared/utils/setup_env.sh"
+setup_tekton_env "$SCRIPT_DIR" "$TEKTON_ROOT"
 
 # Create logs directory
 mkdir -p "$HOME/.tekton/logs"

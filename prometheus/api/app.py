@@ -99,6 +99,16 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"FastMCP server initialization failed: {e}")
         
+        # Initialize Hermes MCP Bridge
+        try:
+            from prometheus.core.mcp.hermes_bridge import PrometheusMCPBridge
+            mcp_bridge = PrometheusMCPBridge()
+            await mcp_bridge.initialize()
+            app.state.mcp_bridge = mcp_bridge
+            logger.info("Hermes MCP Bridge initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Hermes MCP Bridge: {e}")
+        
         # Initialize engines (will be implemented in future PRs)
         logger.info("Initialization complete")
         
@@ -128,6 +138,11 @@ async def lifespan(app: FastAPI):
             logger.info("FastMCP server shut down successfully")
         except Exception as e:
             logger.warning(f"FastMCP server shutdown failed: {e}")
+        
+        # Shutdown Hermes MCP Bridge
+        if hasattr(app.state, "mcp_bridge") and app.state.mcp_bridge:
+            await app.state.mcp_bridge.shutdown()
+            logger.info("Hermes MCP Bridge shutdown complete")
         
         # Give sockets time to close on macOS
         await asyncio.sleep(0.5)
