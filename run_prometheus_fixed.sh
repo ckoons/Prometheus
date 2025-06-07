@@ -13,7 +13,8 @@ export PROMETHEUS_PORT
 export PYTHONPATH="${SCRIPT_DIR}:${TEKTON_ROOT}:${PYTHONPATH}"
 
 # Create log directory
-mkdir -p "${HOME}/.tekton/logs"
+LOG_DIR="${TEKTON_LOG_DIR:-$TEKTON_ROOT/.tekton/logs}"
+mkdir -p "$LOG_DIR"
 
 # Check if Prometheus is already running
 if nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then

@@ -16,7 +16,8 @@ source "$TEKTON_ROOT/shared/utils/setup_env.sh"
 setup_tekton_env "$SCRIPT_DIR" "$TEKTON_ROOT"
 
 # Create logs directory
-mkdir -p "$HOME/.tekton/logs"
+LOG_DIR="${TEKTON_LOG_DIR:-$TEKTON_ROOT/.tekton/logs}"
+mkdir -p "$LOG_DIR"
 
 # Check if Prometheus is already running
 if nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then
@@ -30,7 +31,7 @@ echo "Starting Prometheus on port $PROMETHEUS_PORT..."
 cd "${SCRIPT_DIR}" || { echo "Failed to change to Prometheus directory"; exit 1; }
 
 # Run the server
-python -m prometheus > "$HOME/.tekton/logs/prometheus.log" 2>&1 &
+python -m prometheus > "$LOG_DIR/prometheus.log" 2>&1 &
 PROMETHEUS_PID=$!
 echo "Prometheus server started with PID: $PROMETHEUS_PID"
 
@@ -47,7 +48,7 @@ done
 # Check if server started successfully
 if ! nc -z localhost $PROMETHEUS_PORT 2>/dev/null; then
     echo "Prometheus failed to start on port $PROMETHEUS_PORT"
-    echo "Check logs at $HOME/.tekton/logs/prometheus.log for details"
+    echo "Check logs at $LOG_DIR/prometheus.log for details"
     exit 1
 fi
 
