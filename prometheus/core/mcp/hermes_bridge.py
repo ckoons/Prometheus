@@ -95,7 +95,7 @@ class PrometheusMCPBridge(MCPService):
     async def register_fastmcp_tool(self, tool_func):
         """Register a single FastMCP tool with Hermes."""
         # Get tool metadata from the decorated function
-        tool_name = f"{self.component_name}.{tool_func.__name__}"
+        tool_name = f"{self.component_name}_{tool_func.__name__}"
         
         # Extract MCP metadata if available
         mcp_metadata = getattr(tool_func, '_mcp_metadata', {})
@@ -188,7 +188,7 @@ class PrometheusMCPBridge(MCPService):
             logger.warning("Hermes client not initialized")
             return
             
-        tool_name = f"{self.component_name}.{tool.name}"
+        tool_name = f"{self.component_name}_{tool.name}"
         
         try:
             await self.hermes_client.register_tool(
@@ -234,14 +234,14 @@ class PrometheusMCPBridge(MCPService):
             
             # Add default tools
             tools_to_unregister.extend([
-                f"{self.component_name}.health_check",
-                f"{self.component_name}.component_info"
+                f"{self.component_name}_health_check",
+                f"{self.component_name}_component_info"
             ])
             
             # Add FastMCP tools
             if self._fastmcp_tools:
                 for tool in self._fastmcp_tools:
-                    tools_to_unregister.append(f"{self.component_name}.{tool.__name__}")
+                    tools_to_unregister.append(f"{self.component_name}_{tool.__name__}")
                     
             # Unregister all tools
             for tool_id in tools_to_unregister:
