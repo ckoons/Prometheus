@@ -5,10 +5,18 @@ This module provides a connector for interacting with the Engram memory componen
 """
 
 import os
+import sys
 import logging
 import json
 from typing import Dict, List, Any, Optional
 import asyncio
+
+# Add Tekton root to path for shared imports
+tekton_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+if tekton_root not in sys.path:
+    sys.path.append(tekton_root)
+
+from shared.utils.env_config import get_component_config
 
 # Configure logging
 logger = logging.getLogger("prometheus.utils.engram_connector")
@@ -26,7 +34,9 @@ class EngramConnector:
         Args:
             engram_url: URL of the Engram API (defaults to environment variable)
         """
-        self.engram_url = engram_url or os.environ.get("ENGRAM_URL", f"http://localhost:{os.environ.get('ENGRAM_PORT', '8000')}/api")
+        config = get_component_config()
+        engram_port = config.engram.port if hasattr(config, 'engram') else int(os.environ.get('ENGRAM_PORT'))
+        self.engram_url = engram_url or os.environ.get("ENGRAM_URL", f"http://localhost:{engram_port}/api")
         self.initialized = False
         self.engram_client = None
     

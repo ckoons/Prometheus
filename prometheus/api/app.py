@@ -328,9 +328,12 @@ app = create_app()
 if __name__ == "__main__":
     from shared.utils.socket_server import run_component_server
     
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
+    
     run_component_server(
         component_name="prometheus",
         app_module="prometheus.api.app",
-        default_port=int(os.environ.get("PROMETHEUS_PORT")),
+        default_port=port,
         reload=False
     )

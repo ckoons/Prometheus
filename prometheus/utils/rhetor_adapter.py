@@ -5,10 +5,18 @@ This module provides an adapter for interacting with the Rhetor LLM component.
 """
 
 import os
+import sys
 import logging
 import json
 from typing import Dict, List, Any, Optional
 import asyncio
+
+# Add Tekton root to path for shared imports
+tekton_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+if tekton_root not in sys.path:
+    sys.path.append(tekton_root)
+
+from shared.utils.env_config import get_component_config
 
 # Configure logging
 logger = logging.getLogger("prometheus.utils.rhetor_adapter")
@@ -26,7 +34,9 @@ class RhetorLLMAdapter:
         Args:
             rhetor_url: URL of the Rhetor API (defaults to environment variable)
         """
-        self.rhetor_url = rhetor_url or os.environ.get("RHETOR_URL", f"http://localhost:{os.environ.get('RHETOR_PORT', '8003')}/api")
+        config = get_component_config()
+        rhetor_port = config.rhetor.port if hasattr(config, 'rhetor') else int(os.environ.get('RHETOR_PORT'))
+        self.rhetor_url = rhetor_url or os.environ.get("RHETOR_URL", f"http://localhost:{rhetor_port}/api")
         self.initialized = False
         self.rhetor_client = None
     

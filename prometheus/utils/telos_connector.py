@@ -5,10 +5,18 @@ This module provides a connector for interacting with the Telos requirements man
 """
 
 import os
+import sys
 import logging
 import json
 from typing import Dict, List, Any, Optional
 import asyncio
+
+# Add Tekton root to path for shared imports
+tekton_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+if tekton_root not in sys.path:
+    sys.path.append(tekton_root)
+
+from shared.utils.env_config import get_component_config
 
 # Configure logging
 logger = logging.getLogger("prometheus.utils.telos_connector")
@@ -26,7 +34,9 @@ class TelosConnector:
         Args:
             telos_url: URL of the Telos API (defaults to environment variable)
         """
-        self.telos_url = telos_url or os.environ.get("TELOS_URL", f"http://localhost:{os.environ.get('TELOS_PORT', '8008')}/api")
+        config = get_component_config()
+        telos_port = config.telos.port if hasattr(config, 'telos') else int(os.environ.get('TELOS_PORT'))
+        self.telos_url = telos_url or os.environ.get("TELOS_URL", f"http://localhost:{telos_port}/api")
         self.initialized = False
         self.telos_client = None
     
