@@ -58,16 +58,18 @@ class PlanningEngine(LatentReasoningMixin):
                 data_dir=data_dir
             )
             
-            self.initialized = result
-            
             if result:
-                logger.info(f"Planning engine initialized with latent reasoning capabilities")
+                logger.info(f"Planning engine initialized with full latent reasoning capabilities")
             else:
-                logger.error(f"Failed to initialize latent reasoning for planning engine")
+                logger.info(f"Planning engine initialized in standalone mode (Engram integration not available)")
                 
-            return result
+            # Planning engine is initialized either way
+            self.initialized = True
+            return True
+            
         except Exception as e:
             logger.error(f"Error initializing planning engine: {e}")
+            self.initialized = False
             return False
     
     async def create_plan(self, 

@@ -1,15 +1,19 @@
 """
 Prometheus/Epimethius API Application
 
-This module defines the FastAPI application for the Prometheus/Epimethius Planning System
-using the standardized component patterns.
+This module defines the FastAPI application for the Prometheus/Epimethius Planning System.
+It implements the Single Port Architecture pattern with path-based routing.
 """
 
 import os
 import sys
-from typing import Dict
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+import asyncio
+import time
+from typing import Dict, Optional
+from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
 
 # Add Tekton root to path if not already present
 tekton_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
@@ -17,20 +21,17 @@ if tekton_root not in sys.path:
     sys.path.insert(0, tekton_root)
 
 # Import shared utilities
+from shared.utils.hermes_registration import HermesRegistration, heartbeat_loop
 from shared.utils.logging_setup import setup_component_logging
-from shared.utils.global_config import GlobalConfig
+from shared.utils.env_config import get_component_config
+from shared.utils.errors import StartupError
+from shared.utils.startup import component_startup, StartupMetrics
+from shared.utils.shutdown import GracefulShutdown
+
+# Import shared API utilities
 from shared.api.documentation import get_openapi_configuration
 from shared.api.endpoints import create_ready_endpoint, create_discovery_endpoint, EndpointInfo
 from shared.api.routers import create_standard_routers, mount_standard_routers
-
-# Import component implementation
-from prometheus.core.prometheus_component import PrometheusComponent
-
-# Import endpoint routers
-from .endpoints import planning, tasks, timelines, resources
-from .endpoints import retrospective, history, improvement
-from .endpoints import tracking, llm_integration
-from .fastmcp_endpoints import mcp_router
 
 # Set up logging
 logger = setup_component_logging("prometheus")
@@ -40,37 +41,145 @@ COMPONENT_NAME = "prometheus"
 COMPONENT_VERSION = "0.1.0"
 COMPONENT_DESCRIPTION = "Strategic planning and goal management system for Tekton ecosystem"
 
-# Create component instance (singleton)
-prometheus = PrometheusComponent()
+# Global start time for readiness checks
+start_time = time.time()
+
+# Import endpoint routers
+from .endpoints import planning, tasks, timelines, resources
+from .endpoints import retrospective, history, improvement
+from .endpoints import tracking, llm_integration
+from .fastmcp_endpoints import mcp_router, fastmcp_server
 
 
-async def startup_callback():
-    """Initialize component during startup."""
-    await prometheus.initialize(
-        capabilities=prometheus.get_capabilities(),
-        metadata=prometheus.get_metadata()
-    )
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Context manager for FastAPI application lifespan events.
+    
+    Args:
+        app: FastAPI application
+    """
+    # Startup: Initialize components
+    logger.info("Starting Prometheus/Epimethius API...")
+    
+    # Get port configuration
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
+    
+    # Register with Hermes
+    hermes_registration = HermesRegistration()
+    heartbeat_task = None
+    
+    try:
+        await hermes_registration.register_component(
+            component_name=COMPONENT_NAME,
+            port=port,
+            version=COMPONENT_VERSION,
+            capabilities=[
+                "strategic_planning",
+                "goal_management",
+                "retrospective_analysis",
+                "timeline_tracking",
+                "resource_optimization"
+            ],
+            metadata={
+                "description": COMPONENT_DESCRIPTION,
+                "category": "planning"
+            }
+        )
+        
+        # Start heartbeat task
+        if hermes_registration.is_registered:
+            heartbeat_task = asyncio.create_task(heartbeat_loop(hermes_registration, "prometheus"))
+        
+        # Initialize FastMCP server
+        try:
+            await fastmcp_server.startup()
+            logger.info("FastMCP server initialized successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server initialization failed: {e}")
+        
+        # Initialize Hermes MCP Bridge
+        try:
+            from prometheus.core.mcp.hermes_bridge import PrometheusMCPBridge
+            mcp_bridge = PrometheusMCPBridge()
+            await mcp_bridge.initialize()
+            app.state.mcp_bridge = mcp_bridge
+            logger.info("Hermes MCP Bridge initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Hermes MCP Bridge: {e}")
+        
+        # Initialize engines (will be implemented in future PRs)
+        logger.info("Initialization complete")
+        
+        # Store registration for access in endpoints
+        app.state.hermes_registration = hermes_registration
+        
+        yield
+    finally:
+        # Cleanup: Shutdown components
+        logger.info("Shutting down Prometheus/Epimethius API...")
+        
+        # Cancel heartbeat task
+        if heartbeat_task:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Deregister from Hermes
+        if hermes_registration.is_registered:
+            await hermes_registration.deregister("prometheus")
+        
+        # Shutdown FastMCP server
+        try:
+            await fastmcp_server.shutdown()
+            logger.info("FastMCP server shut down successfully")
+        except Exception as e:
+            logger.warning(f"FastMCP server shutdown failed: {e}")
+        
+        # Shutdown Hermes MCP Bridge
+        if hasattr(app.state, "mcp_bridge") and app.state.mcp_bridge:
+            await app.state.mcp_bridge.shutdown()
+            logger.info("Hermes MCP Bridge shutdown complete")
+        
+        # Give sockets time to close on macOS
+        await asyncio.sleep(0.5)
+        
+        # Cleanup resources (will be implemented in future PRs)
+        logger.info("Cleanup complete")
 
 
 def create_app() -> FastAPI:
     """
-    Create the FastAPI application using standardized patterns.
+    Create the FastAPI application.
     
     Returns:
         FastAPI application
     """
-    # Create app with standardized lifespan
-    app = prometheus.create_app(
-        startup_callback=startup_callback,
+    # Get port configuration
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
+    
+    # Create the FastAPI application with OpenAPI configuration
+    app = FastAPI(
         **get_openapi_configuration(
             component_name=COMPONENT_NAME,
             component_version=COMPONENT_VERSION,
             component_description=COMPONENT_DESCRIPTION
-        )
+        ),
+        lifespan=lifespan
     )
     
-    # Store component reference
-    app.state.component = prometheus
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # Allow all origins (customize as needed)
+        allow_credentials=True,
+        allow_methods=["*"],  # Allow all methods
+        allow_headers=["*"],  # Allow all headers
+    )
     
     # Create standard routers
     routers = create_standard_routers(COMPONENT_NAME)
@@ -79,14 +188,14 @@ def create_app() -> FastAPI:
     @routers.root.get("/ready")
     async def ready():
         """Readiness check endpoint."""
-        global_config = GlobalConfig.get_instance()
         ready_check = create_ready_endpoint(
             component_name=COMPONENT_NAME,
             component_version=COMPONENT_VERSION,
-            start_time=global_config._start_time,
-            readiness_check=lambda: prometheus.planning_engine is not None
+            start_time=start_time,
+            readiness_check=lambda: True  # Add proper checks when engines are implemented
         )
         return await ready_check()
+    
     
     # Add discovery endpoint
     routers.v1.add_api_route(
@@ -112,8 +221,17 @@ def create_app() -> FastAPI:
                 EndpointInfo(path="/api/v1/mcp", method="*", description="MCP endpoints"),
                 EndpointInfo(path="/ws", method="WS", description="WebSocket for real-time updates")
             ],
-            capabilities=prometheus.get_capabilities(),
-            metadata=prometheus.get_metadata()
+            capabilities=[
+                "strategic_planning",
+                "goal_management",
+                "retrospective_analysis",
+                "timeline_tracking",
+                "resource_optimization"
+            ],
+            metadata={
+                "category": "planning",
+                "dual_nature": "Prometheus (forward planning) + Epimethius (retrospective analysis)"
+            }
         ),
         methods=["GET"]
     )
@@ -142,7 +260,7 @@ def create_app() -> FastAPI:
                 "status": "error",
                 "message": "Internal server error",
                 "error_code": "INTERNAL_SERVER_ERROR",
-                "details": str(exc) if GlobalConfig.get_instance().debug else None
+                "details": str(exc) if os.environ.get("DEBUG", "false").lower() == "true" else None
             }
         )
     
@@ -161,19 +279,24 @@ def create_app() -> FastAPI:
     # Root router
     @app.get("/")
     async def root():
-        config = GlobalConfig.get_instance().config
         return {
             "name": "Prometheus/Epimethius Planning System API",
-            "version": COMPONENT_VERSION,
+            "version": "0.1.0",
             "status": "online",
-            "docs_url": f"http://localhost:{config.prometheus.port}/docs"
+            "docs_url": f"http://localhost:{port}/docs"
         }
     
     # Health check
     @app.get("/health")
     async def health_check():
         """Health check endpoint following Tekton standards"""
-        return prometheus.get_health_status()
+        return {
+            "status": "healthy",
+            "component": "prometheus",
+            "version": "0.1.0",
+            "port": port,
+            "message": "Prometheus is running normally"
+        }
     
     # Mount business logic routers under v1
     # Prometheus (forward planning) API routes
@@ -205,8 +328,8 @@ app = create_app()
 if __name__ == "__main__":
     from shared.utils.socket_server import run_component_server
     
-    global_config = GlobalConfig.get_instance()
-    port = global_config.config.prometheus.port
+    config = get_component_config()
+    port = config.prometheus.port if hasattr(config, 'prometheus') else int(os.environ.get("PROMETHEUS_PORT"))
     
     run_component_server(
         component_name="prometheus",

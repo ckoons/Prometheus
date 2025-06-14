@@ -36,14 +36,24 @@ class PrometheusClient:
         Initialize the Prometheus/Epimethius client.
         
         Args:
-            base_url: Base URL for the Prometheus/Epimethius API (default: environment variable or localhost)
+            base_url: Base URL for the Prometheus/Epimethius API (default: from GlobalConfig)
             session: aiohttp ClientSession (a new one will be created if not provided)
             timeout: Request timeout in seconds
             max_retries: Maximum number of retries for failed requests
             retry_delay: Delay between retries in seconds
         """
-        # Set up base URL
-        self.base_url = base_url or os.environ.get("PROMETHEUS_URL", "http://localhost:8006/api")
+        # Set up base URL using GlobalConfig if not provided
+        if base_url is None:
+            try:
+                from shared.utils.global_config import GlobalConfig
+                global_config = GlobalConfig.get_instance()
+                prometheus_url = global_config.get_service_url('prometheus')
+                self.base_url = f"{prometheus_url}/api"
+            except:
+                # Fallback if GlobalConfig not available
+                self.base_url = "http://localhost:8006/api"
+        else:
+            self.base_url = base_url
         
         # Ensure base_url ends with /
         if not self.base_url.endswith("/"):
@@ -981,10 +991,14 @@ async def get_prometheus_client(
     if base_url:
         return PrometheusClient(base_url=base_url)
     
-    # Try to get the URL from environment variables
-    env_url = os.environ.get("PROMETHEUS_URL")
-    if env_url:
-        return PrometheusClient(base_url=env_url)
+    # Try to get the URL using GlobalConfig
+    try:
+        from shared.utils.global_config import GlobalConfig
+        global_config = GlobalConfig.get_instance()
+        prometheus_url = global_config.get_service_url('prometheus')
+        return PrometheusClient(base_url=f"{prometheus_url}/api")
+    except:
+        pass
     
     # Try to discover the service via Hermes
     try:
@@ -996,7 +1010,7 @@ async def get_prometheus_client(
                 from hermes.api.client import HermesClient
             except ImportError:
                 logger.warning("Hermes client not available. Using default URL.")
-                return PrometheusClient(base_url="http://localhost:8006/api")
+                return PrometheusClient()
         
         # Try to get the endpoint from Hermes
         hermes_url = os.environ.get("HERMES_URL", "http://localhost:8000/api")
@@ -1015,8 +1029,8 @@ async def get_prometheus_client(
         
         # If we got here, discovery failed
         logger.warning(f"Could not discover {component_id} via Hermes. Using default URL.")
-        return PrometheusClient(base_url="http://localhost:8006/api")
+        return PrometheusClient()
     
     except Exception as e:
         logger.warning(f"Error during service discovery: {e}. Using default URL.")
-        return PrometheusClient(base_url="http://localhost:8006/api")
+        return PrometheusClient()
